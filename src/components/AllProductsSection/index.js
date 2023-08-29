@@ -17,11 +17,18 @@ const sortbyOptions = [
   },
 ]
 
+const apiStatusConstants = {
+  initial: 'INITIAL',
+  success: 'SUCCESS',
+  failure: 'FAILURE',
+  inProgress: 'IN_PROGRESS',
+}
+
 class AllProductsSection extends Component {
   state = {
     productsList: [],
-    isLoading: false,
     activeOptionId: sortbyOptions[0].optionId,
+    apiStatus: apiStatusConstants.initial,
   }
 
   componentDidMount() {
@@ -30,8 +37,9 @@ class AllProductsSection extends Component {
 
   getProducts = async () => {
     this.setState({
-      isLoading: true,
+      apiStatus: apiStatusConstants.inProgress,
     })
+
     const jwtToken = Cookies.get('jwt_token')
     const {activeOptionId} = this.state
     const apiUrl = `https://apis.ccbp.in/products?sort_by=${activeOptionId}`
@@ -54,10 +62,10 @@ class AllProductsSection extends Component {
       }))
       this.setState({
         productsList: updatedData,
-        isLoading: false,
+        apiStatus: apiStatusConstants.success,
       })
-    } else {
-      ;<h1>OOPS! You have Poor Internet Connectivity</h1>
+    } else if (response.status === 401) {
+      this.setState({apiStatus: apiStatusConstants.failure})
     }
   }
 
@@ -89,9 +97,20 @@ class AllProductsSection extends Component {
     </div>
   )
 
+  renderFailureView = () => <h1>OOPS!You have Poor Internet Connectivity</h1>
+
   render() {
-    const {isLoading} = this.state
-    return isLoading ? this.renderLoader() : this.renderProductsList()
+    const {apiStatus} = this.state
+    switch (apiStatus) {
+      case apiStatusConstants.success:
+        return this.renderProductsList()
+      case apiStatusConstants.failure:
+        return this.renderFailureView()
+      case apiStatusConstants.inProgress:
+        return this.renderLoader()
+      default:
+        return null
+    }
   }
 }
 
