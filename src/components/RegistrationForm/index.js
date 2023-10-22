@@ -1,56 +1,68 @@
 import {Component} from 'react'
 import Cookies from 'js-cookie'
-import {Redirect, Link} from 'react-router-dom'
 
 import './index.css'
 
-class LoginForm extends Component {
+class RegistrationForm extends Component {
   state = {
     username: '',
     password: '',
+    email: '',
     showSubmitError: false,
-    errorMsg: '',
+    responseMessage: '',
   }
 
   onChangeUsername = event => {
     this.setState({username: event.target.value})
   }
 
+  onChangeEmail = event => {
+    this.setState({email: event.target.value})
+  }
+
   onChangePassword = event => {
     this.setState({password: event.target.value})
-  }
-
-  onSubmitSuccess = token => {
-    const {history} = this.props
-
-    Cookies.set('jwt_token', token, {
-      expires: 30,
-    })
-    history.replace('/')
-  }
-
-  onSubmitFailure = errorMsg => {
-    this.setState({showSubmitError: true, errorMsg})
   }
 
   submitForm = async event => {
     event.preventDefault()
     const {username, password} = this.state
     const userDetails = {username, password}
-    const url = 'http://localhost:3000/login'
+    const url = 'http://localhost:3000/register'
     const options = {
       method: 'POST',
       body: JSON.stringify(userDetails),
     }
     const response = await fetch(url, options)
     console.log(response)
-    const data = await response.json()
-    console.log(data)
-    if (response.ok === true) {
-      this.onSubmitSuccess(data.token)
-    } else {
-      this.onSubmitFailure(data.error_msg)
-    }
+    this.setState({showSubmitError: true, responseMessage: response})
+  }
+
+  onSubmitSuccess = jwtToken => {
+    const {history} = this.props
+
+    Cookies.set('jwt_token', jwtToken, {
+      expires: 30,
+    })
+    history.replace('/')
+  }
+
+  renderEmailField = () => {
+    const {email} = this.state
+    return (
+      <>
+        <label className="input-label" htmlFor="email">
+          EMAIL address
+        </label>
+        <input
+          type="text"
+          id="email"
+          className="username-input-field"
+          value={email}
+          onChange={this.onChangeEmail}
+        />
+      </>
+    )
   }
 
   renderPasswordField = () => {
@@ -90,11 +102,8 @@ class LoginForm extends Component {
   }
 
   render() {
-    const {showSubmitError, errorMsg} = this.state
-    const jwtToken = Cookies.get('jwt_token')
-    if (jwtToken !== undefined) {
-      return <Redirect to="/" />
-    }
+    const {showSubmitError, responseMessage} = this.state
+
     return (
       <div className="login-form-container">
         <img
@@ -115,20 +124,18 @@ class LoginForm extends Component {
           />
           <div className="input-container">{this.renderUsernameField()}</div>
           <div className="input-container">{this.renderPasswordField()}</div>
+          <div className="input-container">{this.renderEmailField()}</div>
+
           <button type="submit" className="login-button">
-            Login
+            Register
           </button>
-          {showSubmitError && <p className="error-message">*{errorMsg}</p>}
+          {showSubmitError && (
+            <p className="error-message">*{responseMessage}</p>
+          )}
         </form>
-        <div>
-          <p>
-            Dont have an account?
-            <Link to="/register">Register</Link>
-          </p>
-        </div>
       </div>
     )
   }
 }
 
-export default LoginForm
+export default RegistrationForm
